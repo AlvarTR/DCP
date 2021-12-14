@@ -15,11 +15,13 @@ def nonZeroConsecutives(lista):
                 break
         else:
             continue
+        totals = totals[:i]
 
-        print("i =", i)
-        while len(totals) > i:
-            totals.pop()
-    return totals #TODO
+    numbers = totals
+    for i, n in enunerate(numbers[1:]):
+        numbers[i] -= n
+    
+    return nodes
 
 
 
@@ -27,6 +29,7 @@ if __name__ == "__main__":
     lists = [
     [1, 2, 3],
     [1, 2, 3, -6],
+    [1, 3, 2, -2, -2, -1, 1]
     [3, 4, -7, 5, -6, 6],
     ]
     for l in lists:
