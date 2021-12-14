@@ -9,16 +9,17 @@ def nonZeroConsecutives(lista):
     totals = []
     for num in lista:
         totals.append(0)
-        for i, t in enumerate(totals):
-            currentValue = num + t
-            if currentValue == 0:
+        for i in range(len(totals)):
+            totals[i] += num
+            if totals[i] == 0:
                 break
-            totals[i] = currentValue
         else:
-            print("i =", i)
-            while len(totals) > i:
-                totals.pop()
-    return totals
+            continue
+
+        print("i =", i)
+        while len(totals) > i:
+            totals.pop()
+    return totals #TODO
 
 
 
