@@ -18,10 +18,10 @@ def nonZeroConsecutives(lista):
         totals = totals[:i]
 
     numbers = totals
-    for i, n in enunerate(numbers[1:]):
+    for i, n in enumerate(numbers[1:]):
         numbers[i] -= n
     
-    return nodes
+    return numbers
 
 
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     lists = [
     [1, 2, 3],
     [1, 2, 3, -6],
-    [1, 3, 2, -2, -2, -1, 1]
+    [1, 3, 2, -2, -2, -1, 1],
     [3, 4, -7, 5, -6, 6],
     ]
     for l in lists:
