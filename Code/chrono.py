@@ -1,8 +1,8 @@
-import time
+from time import perf_counter
 
 def chrono(f, args, message = ""):
-    chrono = time.time()
+    chrono = perf_counter()
     value = f(*args)
-    mesuredTime = time.time() - chrono
-    print(message, mesuredTime)
+    mesuredTime = perf_counter() - chrono
+    print(f"{message}: {mesuredTime}")
     return value

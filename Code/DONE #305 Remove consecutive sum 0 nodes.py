@@ -3,8 +3,6 @@ Given a linked list, remove all consecutive nodes that sum to zero. Print out th
 
 For example, suppose you are given the input 3 -> 4 -> -7 -> 5 -> -6 -> 6. In this case, you should first remove 3 -> 4 -> -7, then -6 -> 6, leaving only 5.
 """
-from chrono import chrono
-
 def nonZeroConsecutives(lista):
     totals = []
     for num in lista:
@@ -20,7 +18,7 @@ def nonZeroConsecutives(lista):
     numbers = totals
     for i, n in enumerate(numbers[1:]):
         numbers[i] -= n
-    
+
     return numbers
 
 
