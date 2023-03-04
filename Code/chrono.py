@@ -1,3 +1,6 @@
+
+from timeit import timeit # Maybe another option?
+
 from time import perf_counter
 
 def chrono(f, args, message = ""):
