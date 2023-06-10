@@ -5,20 +5,39 @@ In addition, the lock has a certain number of "dead ends", meaning that if you t
 
 Let us consider a "move" to be a rotation of a single wheel by one digit, in either direction. Given a lock initially set to 000, a target combination, and a list of dead ends, write a function that returns the minimum number of moves required to reach the target state, or None if this is impossible.
 """
+from collections import namedtuple
 from timeit import timeit
+from typing import List
 
 import numpy as np
 
-from typing import List
+Lock = namedtuple("Lock", "wheel_0_steps_remaining \
+                           wheel_1_steps_remaining \
+                           wheel_2_steps_remaining")
 
-def direct_unlock(initial_state: str, desired_state: str, deadlock_states: List[str]):
-    wheels = [int(char) for char in initial_state]
-    working_wheels = list(wheels)
-    desired_wheels = [int(char) for char in desired_state]
+
+def parse_states_to_list_of_wheels(initial_state: str,
+                                   desired_state: str,
+                                   deadlock_states: List[str]):
+    wheels = np.array([int(char) for char in initial_state], dtype=np.int8)
+    desired_wheels = np.array([int(char)
+                              for char in desired_state], dtype=np.int8)
 
     deadlocks = []
     for deadlock in deadlock_states:
-        deadlocks.append([int(char) for char in deadlock])
+        deadlocks.append(np.array([int(char)
+                         for char in deadlock], dtype=np.int8))
+
+    return wheels, desired_wheels, deadlocks
+
+
+def direct_unlock(initial_state: str,
+                  desired_state: str,
+                  deadlock_states: List[str]):
+    wheels, desired_wheels, deadlocks = parse_states_to_list_of_wheels(initial_state,
+                                                                       desired_state,
+                                                                       deadlock_states)
+    working_wheels = np.array(wheels, copy=True)
 
     total_moves = 0
     for wheel_index, (wheel, desired_wheel) in enumerate(zip(wheels, desired_wheels)):
@@ -37,7 +56,7 @@ def direct_unlock(initial_state: str, desired_state: str, deadlock_states: List[
             print(working_wheels)
 
             for deadlock in deadlocks:
-                if (all(ww == dl for ww, dl in zip(working_wheels, deadlock))):
+                if ((working_wheels == deadlock).all()):
                     print("DEADLOCK")
                     return None
             total_moves += 1
@@ -47,6 +66,21 @@ def direct_unlock(initial_state: str, desired_state: str, deadlock_states: List[
     return total_moves
 
 
+def quantum_unlock(initial_state: str,
+                   desired_state: str,
+                   deadlock_states: List[str]):
+    wheels, desired_wheels, deadlocks = parse_states_to_list_of_wheels(initial_state,
+                                                                       desired_state,
+                                                                       deadlock_states)
+
+    for wheel_index, (wheel, desired_wheel) in enumerate(zip(wheels, desired_wheels)):
+        options = {
+            (desired_wheel - wheel) % 10: 1,
+            (wheel - desired_wheel) % 10: -1
+        }
+
+
 if __name__ == "__main__":
-    timeit('direct_unlock("000", "876", ["877",])', globals=globals(), number=1)
+    timeit(
+        'direct_unlock("000", "876", ["877",])', globals=globals(), number=1)
     pass
