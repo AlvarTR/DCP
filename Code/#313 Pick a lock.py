@@ -56,41 +56,6 @@ def all_first_move_options(turn_and_steps_dict: dict) -> deque:
     return state_list
 
 
-def direct_unlock(initial_state: str,
-                  desired_state: str,
-                  deadlock_states: List[str]):
-    wheels, desired_wheels, deadlocks = parse_states_to_list_of_wheels(initial_state,
-                                                                       desired_state,
-                                                                       deadlock_states)
-    working_wheels = np.array(wheels, copy=True)
-
-    total_moves = 0
-    for wheel_index, (wheel, desired_wheel) in enumerate(zip(wheels, desired_wheels)):
-        options = {
-            (desired_wheel - wheel) % 10: 1,
-            (wheel - desired_wheel) % 10: -1
-        }
-
-        min_moves = min(options.keys())
-        min_direction = options[min_moves]
-        min_moves *= min_direction
-
-        for move in range(wheel + min_direction, min_moves + min_direction, min_direction):
-            working_wheels[wheel_index] = move % 10
-
-            # print(working_wheels)
-
-            for deadlock in deadlocks:
-                if ((working_wheels == deadlock).all()):
-                    # print("DEADLOCK")
-                    return None
-            total_moves += 1
-
-        # total_moves += min(abs(option[1:]) for option in options)
-    # print(total_moves)
-    return total_moves
-
-
 def width_unlock(initial_state: str,
                  desired_state: str,
                  deadlock_states: List[str]):
@@ -309,9 +274,6 @@ def width_graph_travel(initial_state, desired_state, deadlocks):
 
 
 if __name__ == "__main__":
-    # timeit('direct_unlock("000", "876", ["877",])',
-    #        globals=globals(), number=1)
-
     initial_state = "000"
     desired_state = "444"
 
