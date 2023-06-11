@@ -230,18 +230,18 @@ def graph_without_deadlocks(graph: Dict[str, set], deadlocks: List[str]):
     return graph
 
 
-def width_graph_travel(initial_state, desired_state, deadlocks):
+def width_graph_travel(initial_state, desired_state, deadlocks) -> List[List[str]]:
     no_deadlocks_graph = graph_without_deadlocks(sparse_graph(3), deadlocks)
 
     # Trivial accesibility
     initial_options = no_deadlocks_graph.get(initial_state, set())
     if not initial_options:
         print("Initial state is an island")
-        return -1
+        return [[]]
 
     if not no_deadlocks_graph.get(desired_state, set()):
         print("Desired state is an island")
-        return -1
+        return [[]]
 
     options = deque([option] for option in initial_options)
     checked = {}
