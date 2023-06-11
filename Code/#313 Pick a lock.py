@@ -8,6 +8,7 @@ Let us consider a "move" to be a rotation of a single wheel by one digit, in eit
 from collections import deque
 from timeit import timeit
 from typing import List
+from itertools import product
 
 import numpy as np
 
@@ -38,11 +39,10 @@ def turn_direction_and_steps_dict(wheels, desired_wheels):
                               wheels_raw_options)
 
     options_dict = {}
-    for i in range(wheels_options.shape[0]):
-        for j in range(wheels_options.shape[0]):
-            for k in range(wheels_options.shape[0]):
-                options = np.choose([i, j, k], wheels_options)
-                options_dict[ tuple(np.sign(options)) ] = options
+    for chooser in product(range(wheels_options.shape[0]), repeat=wheels_options.shape[1]):
+        options = np.choose(chooser, wheels_options)
+        options_dict[ tuple(np.sign(options)) ] = options
+        
     return options_dict
 
 
