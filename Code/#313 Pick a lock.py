@@ -7,7 +7,7 @@ Let us consider a "move" to be a rotation of a single wheel by one digit, in eit
 """
 from collections import deque
 from timeit import timeit
-from typing import List
+from typing import List, Dict
 from itertools import product
 
 import numpy as np
@@ -236,25 +236,99 @@ def depth_unlock(initial_state: str,
     return solutions
 
 
+# Graph navigation implementation
+def sparse_graph(wheel_num: int):
+    graph = {}
+    for w in range(10**wheel_num):
+        state = "{:0>3}".format(w)
+        wheels = [int(char) for char in state]
+        graph[state] = set()
+
+        for i in range(len(wheels)):
+            for increment in (1, -1):
+                current_wheels = list(wheels)
+                current_wheels[i] += increment
+                current_wheels[i] %= 10
+                current_state = "".join(str(wheel) for wheel in current_wheels)
+                graph[state].add(current_state)
+    return graph
+
+
+def graph_without_deadlocks(graph: Dict[str, set], deadlocks: List[str]):
+    for deadlock in deadlocks:
+        deadlock_connections = graph.pop(deadlock, set())
+        for connection in deadlock_connections:
+            graph[connection].discard(deadlock)
+            if not graph[connection]:
+                graph.pop(connection, set())
+
+    return graph
+
+
+def width_graph_travel(initial_state, desired_state, deadlocks):
+    no_deadlocks_graph = graph_without_deadlocks(sparse_graph(3), deadlocks)
+
+    # Trivial accesibility
+    initial_options = no_deadlocks_graph.get(initial_state, set())
+    if not initial_options:
+        print("Initial state is an island")
+        return -1
+
+    if not no_deadlocks_graph.get(desired_state, set()):
+        print("Desired state is an island")
+        return -1
+
+    options = deque([option] for option in initial_options)
+    checked = {}
+    solutions = []
+    while (options):
+        current_history = options.popleft()
+        current_option = current_history[-1]
+
+        forbidden_connections = checked.get(current_option, set())
+        if not forbidden_connections:
+            checked[current_option] = set()
+
+        if current_option == desired_state:
+            solutions.append(current_history)
+            continue
+
+        new_options = no_deadlocks_graph[current_option]
+        for new_option in new_options.difference(forbidden_connections):
+            options.append(current_history + [new_option])
+
+        checked[current_option].update(new_options)
+
+    if solutions:
+        print("Solutions:")
+        for solution in solutions:
+            print(solution)
+    else:
+        print("No solutions found")
+    return solutions
+
+
 if __name__ == "__main__":
     # timeit('direct_unlock("000", "876", ["877",])',
     #        globals=globals(), number=1)
+
     initial_state = "000"
-    desired_state = "999"
+    desired_state = "444"
 
     deadlocks = set()
-    deadlocks.update("".join(p) for p in product("901", repeat=3))
+    deadlocks.update("".join(p) for p in product("123", repeat=3))
     deadlocks.discard(initial_state)
     deadlocks.discard(desired_state)
-    deadlocks.discard("001")
 
     # for a in "9":
     #     for b in "901":
     #         for c in "901":
     #             deadlocks.discard(a+b+c)
-    
-    print(timeit(f'depth_unlock("{initial_state}", "{desired_state}", {deadlocks})',
+
+    print(timeit(f'width_graph_travel("{initial_state}", "{desired_state}", {deadlocks})',
                  globals=globals(), number=1))
-    print(timeit(f'width_unlock("{initial_state}", "{desired_state}", {deadlocks})',
-                 globals=globals(), number=1))
+    # print(timeit(f'depth_unlock("{initial_state}", "{desired_state}", {deadlocks})',
+    #              globals=globals(), number=1))
+    # print(timeit(f'width_unlock("{initial_state}", "{desired_state}", {deadlocks})',
+    #              globals=globals(), number=1))
     pass
