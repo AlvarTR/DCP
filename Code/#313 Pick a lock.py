@@ -38,19 +38,11 @@ def turn_direction_and_steps_dict(wheels, desired_wheels):
                               wheels_raw_options)
 
     options_dict = {}
-    for i in range(2):
-        wheel_0_option = wheels_options[i, 0]
-        wheel_0_sign = np.sign(wheel_0_option)
-        for j in range(2):
-            wheel_1_option = wheels_options[j, 1]
-            wheel_1_sign = np.sign(wheel_1_option)
-            for k in range(2):
-                wheel_2_option = wheels_options[k, 2]
-                wheel_2_sign = np.sign(wheel_2_option)
-
-                options_dict[(wheel_0_sign,
-                              wheel_1_sign,
-                              wheel_2_sign)] = np.array([wheel_0_option, wheel_1_option, wheel_2_option])
+    for i in range(wheels_options.shape[0]):
+        for j in range(wheels_options.shape[0]):
+            for k in range(wheels_options.shape[0]):
+                options = np.choose([i, j, k], wheels_options)
+                options_dict[ tuple(np.sign(options)) ] = options
     return options_dict
 
 
@@ -113,29 +105,28 @@ def width_unlock(initial_state: str,
                                                                        deadlock_states)
     turn_and_steps_dict = turn_direction_and_steps_dict(wheels, desired_wheels)
 
-    total_moves = 0
     # The desired state and the wheel state are the same
     if (0, 0, 0) in turn_and_steps_dict:
-        return total_moves
+        return 0
 
-    total_moves += 1
     state_queue = all_first_move_options(turn_and_steps_dict)
     queue_len_saved = len(state_queue)
 
+    checked = set([])
     for _ in range(queue_len_saved):
         current_option = state_queue.popleft()
         current_wheels = (wheels + current_option[0]) % 10
 
         if (current_wheels == wheels).all():
-            return total_moves
+            return 1
 
         if any((current_wheels == deadlock).all() for deadlock in deadlocks):
-            print(candidate, "DEADLOCK")
+            checked.add(tuple(tuple(row) for row in current_option))
+            print(candidate, "initial DEADLOCK")
             continue
 
         state_queue.append(current_option)
 
-    checked = set([])
     # All queue states are valid. No more deadlock states in the queue.
     while (state_queue):
         current_option = state_queue.popleft()
@@ -149,11 +140,22 @@ def width_unlock(initial_state: str,
                 # print(candidate, "already checked. Dropping it.")
                 continue
 
-            if ((candidate[0] > 10) | (candidate[0] < -10)).any():
-                print(candidate, "a whole wheel loop. Dropping it")
+            checked.add(hashable_candidate)
+
+            if ((candidate[0] > 20) | (candidate[0] < -20)).any():
+                # print(candidate, "two loops of the same wheel. Dropping it")
+                continue
+
+            if ((candidate[0] > 10) | (candidate[0] < -10)).all():
+                # print(candidate, "a whole locker loop. Dropping it")
                 continue
 
             current_wheels = (wheels + candidate[0]) % 10
+
+            if any((current_wheels == deadlock).all() for deadlock in deadlocks):
+                print(candidate, "DEADLOCK")
+                continue
+            
             if (current_wheels == wheels).all():
                 moves_required = turn_and_steps_dict[tuple(candidate[-1])]
                 print("Required:", moves_required)
@@ -161,11 +163,6 @@ def width_unlock(initial_state: str,
                 print("Total:", total_moves)
                 return total_moves
 
-            if any((current_wheels == deadlock).all() for deadlock in deadlocks):
-                print(candidate, "DEADLOCK")
-                continue
-
-            checked.add(hashable_candidate)
             state_queue.append(candidate)
 
     print("No route found for achieving the unlock code")
