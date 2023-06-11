@@ -255,11 +255,12 @@ def width_graph_travel(initial_state, desired_state, deadlocks) -> List[List[str
             checked[current_option] = set()
 
         if current_option == desired_state:
-            solutions.append(current_history)
-            continue
+            if (not solutions) or (len(current_history) <= min(len(history) for history in solutions)):
+                solutions.append(current_history)
+                continue
 
-        new_options = no_deadlocks_graph[current_option]
-        for new_option in new_options.difference(forbidden_connections):
+        new_options = no_deadlocks_graph[current_option].difference(forbidden_connections)
+        for new_option in new_options:
             options.append(current_history + [new_option])
 
         checked[current_option].update(new_options)
@@ -275,10 +276,10 @@ def width_graph_travel(initial_state, desired_state, deadlocks) -> List[List[str
 
 if __name__ == "__main__":
     initial_state = "000"
-    desired_state = "444"
+    desired_state = "123"
 
     deadlocks = set()
-    deadlocks.update("".join(p) for p in product("123", repeat=3))
+    deadlocks.update("".join(p) for p in product("023456789", repeat=3))
     deadlocks.discard(initial_state)
     deadlocks.discard(desired_state)
 
