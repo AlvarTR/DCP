@@ -42,7 +42,7 @@ def turn_direction_and_steps_dict(wheels, desired_wheels):
     for chooser in product(range(wheels_options.shape[0]), repeat=wheels_options.shape[1]):
         options = np.choose(chooser, wheels_options)
         options_dict[ tuple(np.sign(options)) ] = options
-        
+
     return options_dict
 
 
@@ -112,7 +112,6 @@ def width_unlock(initial_state: str,
     state_queue = all_first_move_options(turn_and_steps_dict)
     queue_len_saved = len(state_queue)
 
-    checked = set([])
     for _ in range(queue_len_saved):
         current_option = state_queue.popleft()
         current_wheels = (wheels + current_option[0]) % 10
@@ -121,13 +120,14 @@ def width_unlock(initial_state: str,
             return 1
 
         if any((current_wheels == deadlock).all() for deadlock in deadlocks):
-            checked.add(tuple(tuple(row) for row in current_option))
             print(candidate, "initial DEADLOCK")
             continue
 
         state_queue.append(current_option)
 
     # All queue states are valid. No more deadlock states in the queue.
+
+    checked = set([])
     while (state_queue):
         current_option = state_queue.popleft()
         for i, direction in enumerate(current_option[-1]):
@@ -168,6 +168,78 @@ def width_unlock(initial_state: str,
     print("No route found for achieving the unlock code")
     return None
 
+def depth_unlock(initial_state: str,
+                 desired_state: str,
+                 deadlock_states: List[str]):
+    wheels, desired_wheels, deadlocks = parse_states_to_list_of_wheels(initial_state,
+                                                                       desired_state,
+                                                                       deadlock_states)
+    turn_and_steps_dict = turn_direction_and_steps_dict(wheels, desired_wheels)
+
+    # The desired state and the wheel state are the same
+    if (0, 0, 0) in turn_and_steps_dict:
+        return 0
+
+    state_queue = all_first_move_options(turn_and_steps_dict)
+
+    messy_order = []
+    while(state_queue):
+        current_option = state_queue.popleft()
+        current_wheels = (wheels + current_option[0]) % 10
+
+        if (current_wheels == wheels).all():
+            return 1
+
+        if any((current_wheels == deadlock).all() for deadlock in deadlocks):
+            print(candidate, "initial DEADLOCK")
+            continue
+
+        messy_order.append(current_option)
+    state_queue = deque(sorted(messy_order, key=lambda x: np.sum(np.abs(x))))
+    del messy_order
+
+    checked = set([])
+    # All queue states are valid. No more deadlock states in the queue.
+    while (state_queue):
+        current_option = state_queue.popleft()
+        for i, direction in enumerate(current_option[-1]):
+            candidate = current_option.copy()
+            candidate[0, i] -= direction
+
+            hashable_candidate = tuple(tuple(row) for row in candidate)
+
+            if hashable_candidate in checked:
+                # print(candidate, "already checked. Dropping it.")
+                continue
+
+            checked.add(hashable_candidate)
+
+            if ((candidate[0] > 20) | (candidate[0] < -20)).any():
+                # print(candidate, "two loops of the same wheel. Dropping it")
+                continue
+
+            if ((candidate[0] > 10) | (candidate[0] < -10)).all():
+                # print(candidate, "a whole locker loop. Dropping it")
+                continue
+
+            current_wheels = (wheels + candidate[0]) % 10
+
+            if any((current_wheels == deadlock).all() for deadlock in deadlocks):
+                print(candidate, "DEADLOCK")
+                continue
+            
+            if (current_wheels == wheels).all():
+                moves_required = turn_and_steps_dict[tuple(candidate[-1])]
+                print("Required:", moves_required)
+                total_moves = np.sum(np.abs(moves_required))
+                print("Total:", total_moves)
+                return total_moves
+
+            state_queue.appendleft(candidate)
+
+    print("No route found for achieving the unlock code")
+    return None
+
 
 if __name__ == "__main__":
     # timeit('direct_unlock("000", "876", ["877",])',
@@ -180,6 +252,6 @@ if __name__ == "__main__":
                     continue
                 deadlocks.append(a+b+c)
 
-    print(timeit(f'width_unlock("000", "876", {deadlocks})',
+    print(timeit(f'depth_unlock("000", "876", {deadlocks})',
                  globals=globals(), number=1))
     pass
