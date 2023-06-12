@@ -244,26 +244,25 @@ def width_graph_travel(initial_state, desired_state, deadlocks) -> List[List[str
         return [[]]
 
     options = deque([option] for option in initial_options)
-    checked = {}
     solutions = []
+    min_solution = int("9"*len(initial_state))
     while (options):
         current_history = options.popleft()
-        current_option = current_history[-1]
-
-        forbidden_connections = checked.get(current_option, set())
-        if not forbidden_connections:
-            checked[current_option] = set()
-
-        if current_option == desired_state:
-            if (not solutions) or (len(current_history) <= min(len(history) for history in solutions)):
-                solutions.append(current_history)
+        if solutions:
+            if len(current_history) > min_solution:
                 continue
 
-        new_options = no_deadlocks_graph[current_option].difference(forbidden_connections)
-        for new_option in new_options:
-            options.append(current_history + [new_option])
+        current_option = current_history[-1]
 
-        checked[current_option].update(new_options)
+        if current_option == desired_state:
+            min_solution = min(min_solution, len(current_history))
+            solutions.append(current_history)
+            continue
+
+        for new_option in no_deadlocks_graph[current_option]:
+            if new_option in current_history:
+                continue
+            options.append(current_history + [new_option])
 
     if solutions:
         print("Solutions:")
@@ -279,14 +278,14 @@ if __name__ == "__main__":
     desired_state = "123"
 
     deadlocks = set()
-    deadlocks.update("".join(p) for p in product("023456789", repeat=3))
+    deadlocks.update("".join(p) for p in product("0123456789", repeat=3))
     deadlocks.discard(initial_state)
     deadlocks.discard(desired_state)
 
-    # for a in "9":
-    #     for b in "901":
-    #         for c in "901":
-    #             deadlocks.discard(a+b+c)
+    for a in "0":
+        for b in "012":
+            for c in "0123":
+                deadlocks.discard(a+b+c)
 
     print(timeit(f'width_graph_travel("{initial_state}", "{desired_state}", {deadlocks})',
                  globals=globals(), number=1))
